@@ -92,6 +92,8 @@
 ; a card :♥K
 
 :♥K
+(def n-numbers [7 8 9 10 11 12 13 14])
+(def n-colors ["♦️" "♥" "♠" "♣"])
 
 (defn n-create-card [number color]
   (let [m {7 "7" 8 "8" 9 "9" 10 "10" 11 "B" 12 "D" 13 "K" 14 "A"}]
