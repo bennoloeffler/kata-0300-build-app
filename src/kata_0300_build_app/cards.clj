@@ -371,9 +371,14 @@
                     :when (>= d 0)]
                 (pair l h)))))))
 (comment
-  (n-all-pairs [[7 "♦️" "♦️7"]
+  (n-all-pairs [(c :♠7)
                 [8 "♦️" "♦️8"]
-                [9 "♦️" "♦️9"]]))
+                [9 "♦️" "♦️9"]
+                (c :♠10)
+                (c :♠B)
+                (c :♠D)
+                (c :♠K)
+                (c :♠A)]))
 
 
 (defn no-doubles
@@ -393,7 +398,7 @@
   (testing "fails"
     (is (not (no-doubles [1 2 [3 4] [3 4]])))))
 
-(defn n-find-pairs-with-diff
+(defn n-find-pairs-with-diff-unmemoized
   "Providing a coll of cards and a coll of numbers, it provides all the
    diffs, that are available. Example:
    (find-pairs-with-diff #{:07♠ :09♠} [1 2 5 4]) => ([2 :07♠ :09♠] [there could be more...])"
@@ -406,6 +411,10 @@
          (sort-by ; found that in docs... do not understand...
           #((into {} (map-indexed (fn [i e] [e i]) coll-of-diffs)) (first %)))
          seq)))
+
+(def n-find-pairs-with-diff
+  (memoize n-find-pairs-with-diff-unmemoized))
+
 
 (comment ; handle nil gracefully...
   (n-find-pairs-with-diff (c :♠7 :♠9) [2])
@@ -442,7 +451,7 @@
     (c :♠B) 11 (c :♠7 :♠9 :♠B)
     nil 8 (c :♠7 :♠9 :♥B :♠B)))
 
-(defn n-try-find-value
+(defn n-try-find-value-unmemoized
   "Return the first possible single card in the coll-of-values."
   [hand coll-of-values]
   {:pre [(make-sure no-doubles coll-of-values)]} ; "in single-strategies, a value may appear only once!"
@@ -450,6 +459,10 @@
        (map #(n-get-card-with-value % hand))
        (remove nil?)
        first))
+
+(def n-try-find-value
+  (memoize n-try-find-value-unmemoized))
+
 (comment
   (n-try-find-value (c :♣B :♣D :♦️8 :♠7 :♠B :♣7 :♣K) [9 14 12 7])
   (n-try-find-value (c :♣B :♣D :♦️8 :♠7 :♠B :♣7 :♣K) [11])
@@ -849,14 +862,29 @@
       (recur (next-turn game) (inc round)))))
 
 (comment
-  (let [new-game #(-> (n-create-game "Armin" "Benno")
-                      n-shuffle-deck
-                      (n-give-cards 8)
-                      play)]
-    (frequencies (map (fn [_] (new-game)) (range 100))))
 
-  (let [same-game #(play a-game)]
-    (frequencies (map (fn [_] (same-game)) (range 1000)))))
+  ;; profiling those functions, the sampling
+  ;; ist most often inside
+  (require '[clj-async-profiler.core :as prof])
+
+    ;; Profile the following expression:
+  (prof/profile (dotimes [i 10000] (reduce + (range i))))
+
+  ;; The resulting flamegraph will be stored in /tmp/clj-async-profiler/results/
+  ;; You can view the HTML file directly from there or start a local web UI:
+
+  (prof/profile (let [new-game #(-> (n-create-game "Armin" "Benno")
+                                    n-shuffle-deck
+                                    (n-give-cards 8)
+                                    play)]
+                  (frequencies (map (fn [_] (new-game)) (range 10000)))))
+
+  (prof/profile (let [same-game #(play a-game)]
+                  (frequencies (map (fn [_] (same-game)) (range 10000)))))
+
+  (prof/serve-ui 8080)  ; Serve on port 8080
+
+  nil)
 
 (defn -main [& args]
   (println (play a-game)))

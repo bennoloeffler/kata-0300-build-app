@@ -15,9 +15,11 @@
             :url  "http://www.wtfpl.net/"}
   :dependencies [[org.clojure/clojure "1.10.3"]
                  [com.github.seancorfield/expectations "2.0.160"]
-                 [io.github.erdos/erdos.assert "0.2.3"]]
+                 [io.github.erdos/erdos.assert "0.2.3"]
+                 [com.clojure-goes-fast/clj-async-profiler "1.0.3"]]
   :main ^:skip-aot kata-0300-build-app.core ; do aot only, when uberjar...
   :target-path "target/%s"
+  :jvm-opts ["-Djdk.attach.allowAttachSelf"]
 
   
   ; running with lein
